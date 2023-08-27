@@ -1,118 +1,95 @@
 import os
 import time
-import pyrogram 
-from pyrogram import Client
 
-client = Client("my_bot", api_id=20210345, api_hash="11bcb58ae8cfb85168fc1f2f8f4c04c2")
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-@client.register_handler(filters.command("start"))
+# Bot token
+TOKEN = os.getenv("BOT_TOKEN")
+
+# Owner name
+OWNER = "bankai"
+
+# Default thumbnail
+THUMBNAIL = "thumbnail.jpg"
+
+# Custom message
+CUSTOM_MESSAGE = ""
+
+# Default resolution
+RESOLUTION = "480p"
+
+# Default video codec
+VIDEO_CODEC = "h264"
+
+# Admins
+ADMINS = ["1234567890"]
+
+# Watermark
+WATERMARK = "@aniimax"
+
+# Updater
+updater = Updater(TOKEN, use_context=True)
+
+# Handlers
+start_handler = CommandHandler("start", start)
+help_handler = CommandHandler("help", help)
+resolution_handler = CommandHandler("resolution", resolution)
+speed_handler = CommandHandler("speed", speed)
+thumbnail_handler = MessageHandler(Filters.photo, thumbnail)
+video_codec_handler = CommandHandler("video_codec", video_codec)
+restart_handler = CommandHandler("restart", restart)
+cancel_handler = CommandHandler("cancel", cancel)
+
+# Add handlers to dispatcher
+updater.dispatcher.add_handler(start_handler)
+updater.dispatcher.add_handler(help_handler)
+updater.dispatcher.add_handler(resolution_handler)
+updater.dispatcher.add_handler(speed_handler)
+updater.dispatcher.add_handler(thumbnail_handler)
+updater.dispatcher.add_handler(video_codec_handler)
+updater.dispatcher.add_handler(restart_handler)
+updater.dispatcher.add_handler(cancel_handler)
+
+# Start the bot
+updater.start_polling()
+
+# Keep the bot running
+updater.idle()
+
 def start(update, context):
-    context.bot.send_message(update.effective_chat.id, "Welcome to my bot!")
+    # Send a welcome message
+    update.message.reply_text(
+        f"Welcome to the video encoder bot! I can encode videos using ffmpeg.\n\n"
+        f"My owner is {OWNER}.\n\n"
+        f"The default resolution is {RESOLUTION}.\n\n"
+        f"The default video codec is {VIDEO_CODEC}.\n\n"
+        f"To get started, use the /help command."
+    )
 
-client.run() ,
-filters
-
-# Initialize the bot
-bot = Client("my_bot", api_id=20210345, api_hash="11bcb58ae8cfb85168fc1f2f8f4c04c2")
-
-# Get the authorized users
-authorized_users = ["@aniimax"]
-
-# Get the start message
-start_message = """
-This is a Telegram bot that can encode video to 480p using FFmpeg. It can also add "provided by @aniimax" and a watermark "@aniimax" at the top right corner.
-
-To use the bot, send a video file to it. The bot will start encoding the video immediately. You can track the progress of the encoding in the chat.
-
-The start message can be edited by authorized users only.
-"""
-
-# Get the thumbnail
-thumbnail = "https://example.com/thumbnail.jpg"
-
-# Get the restart option
-restart_option = "restart"
-
-# Get the custom message
-custom_message = "(Edited by admin)"
-
-# The main function
-def main():
-
-    # Register a handler for the "/help" command
-    bot.on(filters.command("help"), help)
-
-    # Register a handler for the "/resolution" command
-    bot.on(filters.command("resolution"), resolution)
-
-    # Register a handler for the "/speed" command
-    bot.on(filters.command("speed"), speed)
-
-    # Register a handler for the "/restart" command
-    bot.on(filters.command("restart"), restart)
-
-    # Start the bot
-    bot.run()
-
-# The "/start" command handler
-def start(update, context):
-    # Check if the user is authorized
-    if update.effective_user not in authorized_users:
-        return
-
-    # Send the start message
-    context.bot.send_message(update.effective_chat.id, start_message)
-
-# The "/help" command handler
 def help(update, context):
-    # Send a message with all the available commands
-    context.bot.send_message(update.effective_chat.id, """
-Available commands:
+    # Send a help message
+    update.message.reply_text(
+        f"Here are the available commands:\n\n"
+        f"/start - Get started\n"
+        f"/help - Show this help message\n"
+        f"/resolution - Change the video encoding resolution\n"
+        f"/speed - Show the download and upload speed\n"
+        f"/thumbnail - Set the thumbnail for the next video\n"
+        f"/video_codec - Change the video encoding codec\n"
+        f"/restart - Restart the bot\n"
+        f"/cancel - Cancel the currently encoding file process\n"
+        f"/watermark - Add a watermark to the encoded video"
+    )
 
-/start - Show the start message
-/help - Show this help message
-/resolution - Change the video encoding resolution
-/speed - Show the download and upload speed
-/restart - Restart the bot
-""")
-
-# The "/resolution" command handler
 def resolution(update, context):
-    # Check if the user is authorized
-    if update.effective_user not in authorized_users:
-        return
+    # Get the new resolution from the user
+    resolution = update.message.text
 
-    # Get the new resolution
-    new_resolution = update.message.text
+    # Set the new resolution
+    global RESOLUTION
+    RESOLUTION = resolution
 
-    # Update the global variable
-    global resolution
-    resolution = new_resolution
+    update.message.reply_text(f"Resolution set to {RESOLUTION}.")
 
-    # Send a message confirming the new resolution
-    context.bot.send_message(update.effective_chat.id, f"The new resolution is {resolution}.")
-
-# The "/speed" command handler
 def speed(update, context):
-    # Get the download speed
-    download_speed = context.bot.get_download_speed()
 
-    # Get the upload speed
-    upload_speed = context.bot.get_upload_speed()
-
-    # Send a message with the download and upload speeds
-    context.bot.send_message(update.effective_chat.id, f"Download speed: {download_speed} Upload speed: {upload_speed}")
-
-# The "/restart" command handler
-def restart(update, context):
-    # Check if the user is authorized
-    if update.effective_user not in authorized_users:
-        return
-
-    # Restart the bot
-    bot.restart()
-
-# Run the main function
-if __name__ == "__main__":
-    main()
-    
