@@ -1,2 +1,2 @@
 ffmpeg 
-telebot
+python-telegram-bot
