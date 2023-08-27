@@ -56,6 +56,8 @@ def help(message):
     /encode - Encode a video
     /help - Get help')
 
+
+
 # Restart the bot
 @bot.message_handler(commands=['restart'])
 def restart(message):
