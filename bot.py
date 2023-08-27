@@ -1,66 +1,111 @@
 import os
-import re
+import time
 
-import ffmpeg
-import telegram
+from pyrogram import Client, filters
 
-def encode_video(video_file, output_file, watermark):
-    """Encodes a video file using ffmpeg and adds a watermark.
+# Initialize the bot
+bot = Client("my_bot", api_id=20210345, api_hash="11bcb58ae8cfb85168fc1f2f8f4c04c2")
 
-    Args:
-        video_file (str): The path to the video file.
-        output_file (str): The path to the output file.
-        watermark (str): The path to the watermark image.
-    """
-    ffmpeg.input(video_file).output(output_file).overwrite_output().video_filter("scale", width=480, height=360).video_filter("drawtext", text=watermark, x=10, y=10, fontcolor="white", fontsize=20).run()
+# Get the authorized users
+authorized_users = ["@aniimax"]
 
-def get_file_name(video_file):
-    """Gets the file name of the video file without the extension and then adds a timestamp to the file name.
+# Get the start message
+start_message = """
+This is a Telegram bot that can encode video to 480p using FFmpeg. It can also add "provided by @aniimax" and a watermark "@aniimax" at the top right corner.
 
-    Args:
-        video_file (str): The path to the video file.
+To use the bot, send a video file to it. The bot will start encoding the video immediately. You can track the progress of the encoding in the chat.
 
-    Returns:
-        str: The file name of the video file without the extension.
-    """
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    return f"{timestamp}_{get_file_name(video_file)}"
+The start message can be edited by authorized users only.
+"""
 
-def get_watermark_text(chat_id):
-    """Gets the watermark text for the given chat ID.
+# Get the thumbnail
+thumbnail = "https://example.com/thumbnail.jpg"
 
-    Args:
-        chat_id (str): The chat ID.
+# Get the restart option
+restart_option = "restart"
 
-    Returns:
-        str: The watermark text.
-    """
-    if chat_id == "YOUR_CHAT_ID":
-        return "@aniimax"
-    else:
-        return "Chat watermark"
+# Get the custom message
+custom_message = "(Edited by admin)"
 
+# The main function
 def main():
-    """The main function of the app."""
-    bot = telegram.Bot(token="YOUR_BOT_TOKEN")
+    # Register a handler for the "/start" command
+    bot.on(filters.command("start"), start)
 
-    @bot.message_handler(commands=["encode"])
-    def encode_video(message):
-        """Encodes a video file and sends the output file to the user.
+    # Register a handler for the "/help" command
+    bot.on(filters.command("help"), help)
 
-        Args:
-            message (telegram.Message): The message from the user.
-        """
-        video_file = message.text.split(" ")[1]
-        output_file = f"{get_file_name(video_file)}_encoded.mp4"
-        watermark = get_watermark_text(message.chat_id)
+    # Register a handler for the "/resolution" command
+    bot.on(filters.command("resolution"), resolution)
 
-        encode_video(video_file, output_file, watermark)
+    # Register a handler for the "/speed" command
+    bot.on(filters.command("speed"), speed)
 
-        bot.send_message(message.chat_id, f"The encoded video has been saved to {output_file}.\n\nVideo provided by @aniimax")
+    # Register a handler for the "/restart" command
+    bot.on(filters.command("restart"), restart)
 
-bot.polling()
+    # Start the bot
+    bot.run()
 
+# The "/start" command handler
+def start(update, context):
+    # Check if the user is authorized
+    if update.effective_user not in authorized_users:
+        return
+
+    # Send the start message
+    context.bot.send_message(update.effective_chat.id, start_message)
+
+# The "/help" command handler
+def help(update, context):
+    # Send a message with all the available commands
+    context.bot.send_message(update.effective_chat.id, """
+Available commands:
+
+/start - Show the start message
+/help - Show this help message
+/resolution - Change the video encoding resolution
+/speed - Show the download and upload speed
+/restart - Restart the bot
+""")
+
+# The "/resolution" command handler
+def resolution(update, context):
+    # Check if the user is authorized
+    if update.effective_user not in authorized_users:
+        return
+
+    # Get the new resolution
+    new_resolution = update.message.text
+
+    # Update the global variable
+    global resolution
+    resolution = new_resolution
+
+    # Send a message confirming the new resolution
+    context.bot.send_message(update.effective_chat.id, f"The new resolution is {resolution}.")
+
+# The "/speed" command handler
+def speed(update, context):
+    # Get the download speed
+    download_speed = context.bot.get_download_speed()
+
+    # Get the upload speed
+    upload_speed = context.bot.get_upload_speed()
+
+    # Send a message with the download and upload speeds
+    context.bot.send_message(update.effective_chat.id, f"Download speed: {download_speed} Upload speed: {upload_speed}")
+
+# The "/restart" command handler
+def restart(update, context):
+    # Check if the user is authorized
+    if update.effective_user not in authorized_users:
+        return
+
+    # Restart the bot
+    bot.restart()
+
+# Run the main function
 if __name__ == "__main__":
     main()
-  
+    
