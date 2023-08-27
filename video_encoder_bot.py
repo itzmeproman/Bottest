@@ -34,7 +34,7 @@ def encode_video(message):
     codec = 'h264'
 
     # Get the resolution
-    resolution = '480p'
+    resolution = get_default_resolution()
 
     # Start the encoding process
     start_time = time.time()
@@ -99,4 +99,4 @@ def speed(message):
 # Set the default resolution
 def set_default_resolution(resolution):
     global default_resolution
-    default
+    
