@@ -1,8 +1,16 @@
 import os
 import time
 import pyrogram 
+from pyrogram import Client
 
-from pyrogram import Client, filters
+client = Client("my_bot", api_id=20210345, api_hash="11bcb58ae8cfb85168fc1f2f8f4c04c2")
+
+@client.register_handler(filters.command("start"))
+def start(update, context):
+    context.bot.send_message(update.effective_chat.id, "Welcome to my bot!")
+
+client.run() ,
+filters
 
 # Initialize the bot
 bot = Client("my_bot", api_id=20210345, api_hash="11bcb58ae8cfb85168fc1f2f8f4c04c2")
@@ -30,8 +38,6 @@ custom_message = "(Edited by admin)"
 
 # The main function
 def main():
-    # Register a handler for the "/start" command
-    bot.on(filters.command("start"), start)
 
     # Register a handler for the "/help" command
     bot.on(filters.command("help"), help)
