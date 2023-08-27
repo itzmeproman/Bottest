@@ -99,4 +99,4 @@ def speed(message):
 # Set the default resolution
 def set_default_resolution(resolution):
     global default_resolution
-    
+    default_resolution = resolution
