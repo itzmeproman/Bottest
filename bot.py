@@ -1,95 +1,103 @@
 import os
 import time
+import telebot
+import ffmpeg
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+bot = telebot.TeleBot(os.environ['BOT_TOKEN'])
 
-# Bot token
-TOKEN = os.getenv("BOT_TOKEN")
+# Start message
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, 'Welcome to the video encoder bot! I can encode videos in different formats and resolutions. To get started, send me a video file.')
 
-# Owner name
-OWNER = "bankai"
+# Add thumbnail
+@bot.message_handler(content_types=['photo'])
+def add_thumbnail(message):
+    global thumbnail
+    global user_id
+    user_id = message.chat.id
+    thumbnail = message.photo[-1].file_id
 
-# Default thumbnail
-THUMBNAIL = "thumbnail.jpg"
+# Encode video
+@bot.message_handler(content_types=['video'])
+def encode_video(message):
+    global thumbnail
+    global user_id
 
-# Custom message
-CUSTOM_MESSAGE = ""
+    # Get the video file
+    video_file = message.video.file_id
 
-# Default resolution
-RESOLUTION = "480p"
+    # Get the output file name
+    output_file_name = user_id + '.mp4'
 
-# Default video codec
-VIDEO_CODEC = "h264"
+    # Get the video codec
+    codec = 'h264'
 
-# Admins
-ADMINS = ["1234567890"]
+    # Get the resolution
+    resolution = '480p'
 
-# Watermark
-WATERMARK = "@aniimax"
+    # Start the encoding process
+    start_time = time.time()
+    ffmpeg.input(video_file).output(output_file_name, codec=codec, preset='veryfast', resolution=resolution).run()
+    encoding_time = time.time() - start_time
 
-# Updater
-updater = Updater(TOKEN, use_context=True)
+    # Send the encoded video
+    bot.send_message(message.chat.id, 'The video has been encoded and sent. Encoding time: {} seconds'.format(encoding_time))
 
-# Handlers
-start_handler = CommandHandler("start", start)
-help_handler = CommandHandler("help", help)
-resolution_handler = CommandHandler("resolution", resolution)
-speed_handler = CommandHandler("speed", speed)
-thumbnail_handler = MessageHandler(Filters.photo, thumbnail)
-video_codec_handler = CommandHandler("video_codec", video_codec)
-restart_handler = CommandHandler("restart", restart)
-cancel_handler = CommandHandler("cancel", cancel)
+    # Set the thumbnail for the user
+    set_thumbnail_for_user(user_id, thumbnail)
 
-# Add handlers to dispatcher
-updater.dispatcher.add_handler(start_handler)
-updater.dispatcher.add_handler(help_handler)
-updater.dispatcher.add_handler(resolution_handler)
-updater.dispatcher.add_handler(speed_handler)
-updater.dispatcher.add_handler(thumbnail_handler)
-updater.dispatcher.add_handler(video_codec_handler)
-updater.dispatcher.add_handler(restart_handler)
-updater.dispatcher.add_handler(cancel_handler)
+# Get help
+@bot.message_handler(commands=['help'])
+def help(message):
+    bot.reply_to(message, 'Here are the available commands:
+    /start - Start the bot
+    /thumbnail - Add a thumbnail to the next video
+    /encode - Encode a video
+    /help - Get help')
 
-# Start the bot
-updater.start_polling()
+# Restart the bot
+@bot.message_handler(commands=['restart'])
+def restart(message):
+    if message.from_user.id == int(os.environ['ADMIN_ID']):
+        bot.stop_bot()
+        time.sleep(1)
+        bot.start_bot()
+        bot.send_message(message.chat.id, 'The bot has been restarted')
+    else:
+        bot.send_message(message.chat.id, 'You are not authorized to use this command')
 
-# Keep the bot running
-updater.idle()
+# Cancel the encoding process
+@bot.message_handler(commands=['cancel'])
+def cancel(message):
+    global thumbnail
+    global user_id
 
-def start(update, context):
-    # Send a welcome message
-    update.message.reply_text(
-        f"Welcome to the video encoder bot! I can encode videos using ffmpeg.\n\n"
-        f"My owner is {OWNER}.\n\n"
-        f"The default resolution is {RESOLUTION}.\n\n"
-        f"The default video codec is {VIDEO_CODEC}.\n\n"
-        f"To get started, use the /help command."
-    )
+    # Check if the user is allowed to cancel the process
+    if message.from_user.id == int(os.environ['ADMIN_ID']) or message.chat.id == user_id:
+        # Remove the thumbnail
+        thumbnail = None
 
-def help(update, context):
-    # Send a help message
-    update.message.reply_text(
-        f"Here are the available commands:\n\n"
-        f"/start - Get started\n"
-        f"/help - Show this help message\n"
-        f"/resolution - Change the video encoding resolution\n"
-        f"/speed - Show the download and upload speed\n"
-        f"/thumbnail - Set the thumbnail for the next video\n"
-        f"/video_codec - Change the video encoding codec\n"
-        f"/restart - Restart the bot\n"
-        f"/cancel - Cancel the currently encoding file process\n"
-        f"/watermark - Add a watermark to the encoded video"
-    )
+        # Cancel the process
+        os.system('pkill -f ffmpeg')
+        bot.send_message(message.chat.id, 'The encoding process has been canceled')
+    else:
+        bot.send_message(message.chat.id, 'You are not authorized to use this command')
 
-def resolution(update, context):
-    # Get the new resolution from the user
-    resolution = update.message.text
+# Get the download and upload speed
+@bot.message_handler(commands=['speed'])
+def speed(message):
+    # Get the download speed
+    speed = os.popen('speedtest-cli --simple').read()
 
-    # Set the new resolution
-    global RESOLUTION
-    RESOLUTION = resolution
+    # Get the upload speed
+    speed = speed.splitlines()[-1]
 
-    update.message.reply_text(f"Resolution set to {RESOLUTION}.")
+    # Send the speed
+    bot.send_message(message.chat.id, 'Download speed: {} Upload speed: {}'.format(speed.split(' ')[0], speed.split(' ')[1]))
 
-def speed(update, context):
-
+# Set the default resolution
+def set_default_resolution(resolution):
+    global default_resolution
+    default
+    
